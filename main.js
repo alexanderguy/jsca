@@ -261,6 +261,20 @@ window.onload = function () {
 	playButton.addEventListener("click", cb);
     };
 
+    var canvasToWorld = function(x, y) {
+	x *= worldWidth / canvas.width;
+	y *= worldHeight / canvas.height;
+
+	// This is a total fudge.
+	x = Math.round(x) - 1
+	y = Math.round(y) - 1
+
+	return {
+	    x: x,
+	    y: y,
+	};
+    };
+
     var canvasOnClick = function (e) {
 	var offsetX = 0, offsetY = 0;
 	var parent = canvas;
@@ -272,15 +286,13 @@ window.onload = function () {
 	}
 
 	var x, y;
+
 	x = e.pageX - offsetX;
 	y = e.pageY - offsetY;
 
-	x *= worldWidth / canvas.width;
-	y *= worldHeight / canvas.height;
-
-	// This is a total fudge.
-	x = Math.round(x) - 1
-	y = Math.round(y) - 1
+	var trans = canvasToWorld(x, y);
+	x = trans.x;
+	y = trans.y;
 
 	log.debug("transformed click on X, Y:", x, y);
 
@@ -293,8 +305,86 @@ window.onload = function () {
 	myLife.draw();
     }
 
-    canvas.addEventListener("click", canvasOnClick);
+    // canvas.addEventListener("click", canvasOnClick);
+    {
+	var state = {
+	    drawValue: undefined,
+	    mouseDown: false,
+	    offset: {
+		x: 0,
+		y: 0,
+	    }
+	};
 
+	var onmousedown = function (e) {
+	    log.debug("mouse down");
+	    state.mouseDown = true;
+
+	    state.offset.x = 0;
+	    state.offset.y = 0;
+
+	    var parent = canvas;
+	    if (parent.offsetParent) {
+		do {
+		    state.offset.x += parent.offsetLeft;
+		    state.offset.y += parent.offsetTop;
+		} while ((parent = parent.offsetParent));
+	    }
+
+	    log.debug("offset is:", state.offset.x, state.offset.y);
+	    var x, y;
+	    x = e.x - state.offset.x;
+	    y = e.y - state.offset.y;
+
+	    var trans = canvasToWorld(x, y);
+	    x = trans.x;
+	    y = trans.y;
+
+	    state.drawValue = !myLife.get(x, y);
+
+	    myLife.draw();
+	    log.debug("mouse down", state, "draw value", state.drawValue);
+	};
+
+	var onmouseup = function (e) {
+	    if (state.mouseDown) {
+		// canvasOnClick(e);
+	    }
+
+	    state.mouseDown = false;
+	    myLife.draw();
+	};
+
+	var onmousemove = function (e) {
+	    if (!state.mouseDown) {
+		return;
+	    }
+
+	    var x, y;
+	    x = e.x - state.offset.x;
+	    y = e.y - state.offset.y;
+
+	    var trans = canvasToWorld(x, y);
+	    x = trans.x;
+	    y = trans.y;
+
+	    log.debug("transformed click on X, Y:", x, y);
+
+	    log.debug("draw value is", state.drawValue);
+	    if (state.drawValue) {
+		myLife.set(x, y);
+	    } else {
+		myLife.clear(x, y);
+	    }
+
+	    myLife.draw();
+	};
+
+	canvas.addEventListener("mousedown", onmousedown);
+	canvas.addEventListener("mousemove", onmousemove);
+	canvas.addEventListener("mouseup", onmouseup);
+
+    }
 };
 
 
