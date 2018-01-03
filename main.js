@@ -226,9 +226,12 @@ window.onload = function () {
 
     myLife.draw();
 
+    var ageElement = document.getElementById("age");
     var heatbeat = setInterval(function () {
 	myLife.tick();
 	myLife.draw();
+
+	ageElement.innerHTML = "Age: " + myLife.world.age;
     }, 75);
 };
 
