@@ -275,37 +275,6 @@ window.onload = function () {
 	};
     };
 
-    var canvasOnClick = function (e) {
-	var offsetX = 0, offsetY = 0;
-	var parent = canvas;
-	if (parent.offsetParent) {
-	    do {
-		offsetX += parent.offsetLeft;
-		offsetY += parent.offsetTop;
-	    } while ((parent = parent.offsetParent));
-	}
-
-	var x, y;
-
-	x = e.pageX - offsetX;
-	y = e.pageY - offsetY;
-
-	var trans = canvasToWorld(x, y);
-	x = trans.x;
-	y = trans.y;
-
-	log.debug("transformed click on X, Y:", x, y);
-
-	if (myLife.get(x, y)) {
-	    myLife.clear(x, y);
-	} else {
-	    myLife.set(x, y);
-	}
-
-	myLife.draw();
-    }
-
-    // canvas.addEventListener("click", canvasOnClick);
     {
 	var state = {
 	    drawValue: undefined,
@@ -346,15 +315,6 @@ window.onload = function () {
 	    log.debug("mouse down", state, "draw value", state.drawValue);
 	};
 
-	var onmouseup = function (e) {
-	    if (state.mouseDown) {
-		// canvasOnClick(e);
-	    }
-
-	    state.mouseDown = false;
-	    myLife.draw();
-	};
-
 	var onmousemove = function (e) {
 	    if (!state.mouseDown) {
 		return;
@@ -380,10 +340,15 @@ window.onload = function () {
 	    myLife.draw();
 	};
 
+	var onmouseup = function (e) {
+	    onmousemove(e);
+
+	    state.mouseDown = false;
+	};
+
 	canvas.addEventListener("mousedown", onmousedown);
 	canvas.addEventListener("mousemove", onmousemove);
 	canvas.addEventListener("mouseup", onmouseup);
-
     }
 };
 
