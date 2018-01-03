@@ -107,8 +107,6 @@ var makeLife = function (width, height, ctx) {
 	    }
 	}
 	o.world.age += 1;
-
-	log.debug("age", o.world.age);
     };
 
     log.debug("making life on", ctx);
