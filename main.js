@@ -6,10 +6,9 @@ var log = {
 
 log.debug("code loading...");
 
-var makeLife = function (width, height, ctx) {
-    var canvas = ctx.canvas;
+var startCallback, stopCallback;
 
-    ctx.scale(canvas.width / width, canvas.height / height);
+var makeLife = function (width, height, ctx) {
 
     var o = {
 	world: {
@@ -132,7 +131,11 @@ var makeLife = function (width, height, ctx) {
     };
 
     o.clear = function (x, y) {
-	o.world.now[x + (y * o.world.width)] = clear;
+	o.world.now[x + (y * o.world.width)] = false;
+    };
+
+    o.get = function (x, y) {
+	return o.world.now[x + (y * o.world.width)];
     };
 
     return o;
@@ -147,7 +150,12 @@ window.onload = function () {
     var canvas = document.getElementById("world");
 
     var ctx = canvas.getContext("2d");
-    myLife = makeLife(100, 100, ctx);
+
+    var worldWidth = 100;
+    var worldHeight = 100;
+    myLife = makeLife(worldWidth, worldHeight, ctx);
+
+    ctx.scale(canvas.width / worldWidth, canvas.height / worldHeight);
 
     var makeGlider = function (x, y) {
 	var s = myLife.set;
@@ -224,13 +232,69 @@ window.onload = function () {
 
     myLife.draw();
 
-    var ageElement = document.getElementById("age");
-    var heatbeat = setInterval(function () {
-	myLife.tick();
-	myLife.draw();
+    {
+	var ageElement = document.getElementById("age");
+	var heartBeat;
 
-	ageElement.innerHTML = "Age: " + myLife.world.age;
-    }, 75);
+	var updateCB = function () {
+	    myLife.tick();
+	    myLife.draw();
+
+	    ageElement.innerHTML = "Age: " + myLife.world.age;
+	};
+
+	var playButton = document.getElementById("playButton");
+
+	var cb = function (e) {
+	    var buttonText;
+	    if (heartBeat) {
+		clearInterval(heartBeat);
+		heartBeat = undefined;
+		buttonText = "Start";
+	    } else {
+		heartBeat = setInterval(updateCB, 75);
+		buttonText = "Stop";
+	    }
+	    playButton.innerHTML = buttonText;
+	};
+	playButton.innerHTML = "Start";
+	playButton.addEventListener("click", cb);
+    };
+
+    var canvasOnClick = function (e) {
+	var offsetX = 0, offsetY = 0;
+	var parent = canvas;
+	if (parent.offsetParent) {
+	    do {
+		offsetX += parent.offsetLeft;
+		offsetY += parent.offsetTop;
+	    } while ((parent = parent.offsetParent));
+	}
+
+	var x, y;
+	x = e.pageX - offsetX;
+	y = e.pageY - offsetY;
+
+	x *= worldWidth / canvas.width;
+	y *= worldHeight / canvas.height;
+
+	// This is a total fudge.
+	x = Math.round(x) - 1
+	y = Math.round(y) - 1
+
+	log.debug("transformed click on X, Y:", x, y);
+
+	if (myLife.get(x, y)) {
+	    myLife.clear(x, y);
+	} else {
+	    myLife.set(x, y);
+	}
+
+	myLife.draw();
+    }
+
+    canvas.addEventListener("click", canvasOnClick);
+
 };
 
 
